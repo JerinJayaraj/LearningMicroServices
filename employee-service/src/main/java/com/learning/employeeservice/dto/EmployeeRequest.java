@@ -4,7 +4,7 @@ import lombok.Data;
 
 
 @Data
-public class EmployeeDto {
+public class EmployeeRequest {
     private String id;
     private String name;
     private String designation;
