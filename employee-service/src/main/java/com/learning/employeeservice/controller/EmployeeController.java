@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api")
 public class EmployeeController {
     @Autowired
     private EmployeeService employeeService;
