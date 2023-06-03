@@ -10,4 +10,5 @@ public class EmployeeResponse {
     private String name;
     private String designation;
     private String companyName;
+    private AddressResponse addressResponse;
 }

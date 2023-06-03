@@ -1,6 +1,5 @@
-package com.learning.addressservice.dto;
+package com.learning.employeeservice.dto;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

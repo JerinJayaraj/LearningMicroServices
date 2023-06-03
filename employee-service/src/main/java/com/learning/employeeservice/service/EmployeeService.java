@@ -1,22 +1,32 @@
 package com.learning.employeeservice.service;
 
+import com.learning.employeeservice.dto.AddressResponse;
 import com.learning.employeeservice.dto.EmployeeRequest;
 import com.learning.employeeservice.dto.EmployeeResponse;
 import com.learning.employeeservice.model.Employee;
 import com.learning.employeeservice.repository.EmployeeRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
 @Service
 public class EmployeeService {
+
     @Autowired
     private EmployeeRepository employeeRepository;
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${addressService.baseUrl}")
+    private String addressServiceBaseUrl;
 
     public EmployeeService() {
     }
@@ -37,6 +47,8 @@ public class EmployeeService {
         if (employeeObject.isPresent()) {
             Employee employee = employeeObject.get();
             EmployeeResponse employeeResponse = modelMapper.map(employee, EmployeeResponse.class);
+            AddressResponse addressResponse = restTemplate.getForObject(addressServiceBaseUrl+"address/{id}", AddressResponse.class, employeeId);
+            employeeResponse.setAddressResponse(addressResponse);
             return Optional.of(employeeResponse);
         }
         return Optional.empty();
