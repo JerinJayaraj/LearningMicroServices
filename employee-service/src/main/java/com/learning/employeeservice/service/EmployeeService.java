@@ -8,6 +8,7 @@ import com.learning.employeeservice.repository.EmployeeRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,13 +23,15 @@ public class EmployeeService {
     @Autowired
     private ModelMapper modelMapper;
 
-    @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${addressService.baseUrl}")
-    private String addressServiceBaseUrl;
 
-    public EmployeeService() {
+    @Autowired
+    public EmployeeService( @Value("${addressService.baseUrl}") String addressServiceBaseUrl, RestTemplateBuilder restTemplateBuilder) {
+        System.out.println("addressServiceBaseUrl" +addressServiceBaseUrl);
+        this.restTemplate = restTemplateBuilder
+                .rootUri(addressServiceBaseUrl)
+                .build();
     }
 
     public boolean createEmployee(EmployeeRequest employeeRequest) {
@@ -47,10 +50,14 @@ public class EmployeeService {
         if (employeeObject.isPresent()) {
             Employee employee = employeeObject.get();
             EmployeeResponse employeeResponse = modelMapper.map(employee, EmployeeResponse.class);
-            AddressResponse addressResponse = restTemplate.getForObject(addressServiceBaseUrl+"address/{id}", AddressResponse.class, employeeId);
+            AddressResponse addressResponse = getAddressUsingRestTemplate(employeeId);
             employeeResponse.setAddressResponse(addressResponse);
             return Optional.of(employeeResponse);
         }
         return Optional.empty();
+    }
+
+    private AddressResponse getAddressUsingRestTemplate(String employeeId) {
+        return restTemplate.getForObject("/address/{id}", AddressResponse.class, employeeId);
     }
 }
