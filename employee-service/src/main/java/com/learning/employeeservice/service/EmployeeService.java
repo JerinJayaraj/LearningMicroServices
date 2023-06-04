@@ -3,12 +3,15 @@ package com.learning.employeeservice.service;
 import com.learning.employeeservice.dto.AddressResponse;
 import com.learning.employeeservice.dto.EmployeeRequest;
 import com.learning.employeeservice.dto.EmployeeResponse;
+import com.learning.employeeservice.feignclient.AddressFeignClient;
 import com.learning.employeeservice.model.Employee;
 import com.learning.employeeservice.repository.EmployeeRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,11 +20,16 @@ import java.util.Optional;
 @Service
 public class EmployeeService {
 
+    public static final int STATUS_CODE_200 = 200;
+
     @Autowired
     private EmployeeRepository employeeRepository;
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private AddressFeignClient addressFeignClient;
 
     private RestTemplate restTemplate;
 
@@ -50,8 +58,11 @@ public class EmployeeService {
         if (employeeObject.isPresent()) {
             Employee employee = employeeObject.get();
             EmployeeResponse employeeResponse = modelMapper.map(employee, EmployeeResponse.class);
-            AddressResponse addressResponse = getAddressUsingRestTemplate(employeeId);
-            employeeResponse.setAddressResponse(addressResponse);
+            ResponseEntity<AddressResponse> addressResponseEntity =  addressFeignClient.getAddressByEmployeeId(employeeId);
+            if (addressResponseEntity.getStatusCode() == HttpStatusCode.valueOf(STATUS_CODE_200)){
+                AddressResponse addressResponse = addressResponseEntity.getBody();
+                employeeResponse.setAddressResponse(addressResponse);
+            }
             return Optional.of(employeeResponse);
         }
         return Optional.empty();

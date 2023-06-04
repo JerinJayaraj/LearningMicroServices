@@ -25,7 +25,7 @@ public class AddressController {
     }
 
     @GetMapping("/address/{empId}")
-    public ResponseEntity<AddressResponse> getEmployeeById(@PathVariable String empId) {
+    public ResponseEntity<AddressResponse> getAddressByEmployeeId(@PathVariable String empId) {
         Optional<AddressResponse> addressResponse = addressService.getAddressByEmployeeId(empId);
         if (addressResponse.isPresent()) {
             return ResponseEntity.status(HttpStatus.OK).body(addressResponse.get());
