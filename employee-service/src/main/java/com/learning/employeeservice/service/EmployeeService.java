@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class EmployeeService {
 
     public static final int STATUS_CODE_200 = 200;
     private static final String ADDRESS_APP = "address-app";
+    private static final String CONFIG_PATH = "configPath";
 
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -41,6 +43,9 @@ public class EmployeeService {
 
     @Autowired
     private DiscoveryClient discoveryClient;
+
+    @Autowired
+    private LoadBalancerClient loadBalancerClient;
 
 
 //    @Autowired
@@ -73,7 +78,7 @@ public class EmployeeService {
 //                employeeResponse.setAddressResponse(addressResponse);
 //            }
 //            return Optional.of(employeeResponse);
-            AddressResponse addressResponseEntity =  getAddressUsingRestTemplate(employeeId);
+            AddressResponse addressResponseEntity =  getAddressUsingRestTemplateInLoadBalancedWay(employeeId);
             if(Objects.nonNull(addressResponseEntity)) {
                 employeeResponse.setAddressResponse(addressResponseEntity);
             }
@@ -88,5 +93,13 @@ public class EmployeeService {
         String uriOfAddressService = instance.getUri().toString();
         System.out.println("URO of Address Service >>>>>>>>>>>>>>>> "+uriOfAddressService);
         return restTemplate.getForObject(uriOfAddressService+"/address-app/api/address/{employeeId}", AddressResponse.class, employeeId);
+    }
+
+    private AddressResponse getAddressUsingRestTemplateInLoadBalancedWay(String employeeId) {
+        ServiceInstance instance = loadBalancerClient.choose(ADDRESS_APP);
+        String uriOfAddressService = instance.getUri().toString();
+        String contextRoot = instance.getMetadata().get(CONFIG_PATH);
+        System.out.println("URI of Address Service >>>>>>>>>>>>>>>> "+uriOfAddressService+contextRoot);
+        return restTemplate.getForObject(uriOfAddressService+contextRoot+"/address/{employeeId}", AddressResponse.class, employeeId);
     }
 }
