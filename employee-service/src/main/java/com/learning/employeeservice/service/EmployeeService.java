@@ -44,8 +44,8 @@ public class EmployeeService {
     @Autowired
     private DiscoveryClient discoveryClient;
 
-    @Autowired
-    private LoadBalancerClient loadBalancerClient;
+//    @Autowired
+//    private LoadBalancerClient loadBalancerClient;
 
 
 //    @Autowired
@@ -78,7 +78,7 @@ public class EmployeeService {
 //                employeeResponse.setAddressResponse(addressResponse);
 //            }
 //            return Optional.of(employeeResponse);
-            AddressResponse addressResponseEntity =  getAddressUsingRestTemplateInLoadBalancedWay(employeeId);
+            AddressResponse addressResponseEntity =  getAddressUsingRestTemplateUsingLoadBalancedAnnotation(employeeId);
             if(Objects.nonNull(addressResponseEntity)) {
                 employeeResponse.setAddressResponse(addressResponseEntity);
             }
@@ -95,11 +95,15 @@ public class EmployeeService {
         return restTemplate.getForObject(uriOfAddressService+"/address-app/api/address/{employeeId}", AddressResponse.class, employeeId);
     }
 
-    private AddressResponse getAddressUsingRestTemplateInLoadBalancedWay(String employeeId) {
-        ServiceInstance instance = loadBalancerClient.choose(ADDRESS_APP);
-        String uriOfAddressService = instance.getUri().toString();
-        String contextRoot = instance.getMetadata().get(CONFIG_PATH);
-        System.out.println("URI of Address Service >>>>>>>>>>>>>>>> "+uriOfAddressService+contextRoot);
-        return restTemplate.getForObject(uriOfAddressService+contextRoot+"/address/{employeeId}", AddressResponse.class, employeeId);
+//    private AddressResponse getAddressUsingRestTemplateInLoadBalancedWay(String employeeId) {
+//        ServiceInstance instance = loadBalancerClient.choose(ADDRESS_APP);
+//        String uriOfAddressService = instance.getUri().toString();
+//        String contextRoot = instance.getMetadata().get(CONFIG_PATH);
+//        System.out.println("URI of Address Service >>>>>>>>>>>>>>>> "+uriOfAddressService+contextRoot);
+//        return restTemplate.getForObject(uriOfAddressService+contextRoot+"/address/{employeeId}", AddressResponse.class, employeeId);
+//    }
+
+    private AddressResponse getAddressUsingRestTemplateUsingLoadBalancedAnnotation(String employeeId) {
+        return restTemplate.getForObject("http://ADDRESS-APP"+"/address-app/api/address/{employeeId}", AddressResponse.class, employeeId);
     }
 }
