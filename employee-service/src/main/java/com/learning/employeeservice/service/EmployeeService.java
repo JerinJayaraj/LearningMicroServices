@@ -10,17 +10,22 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
 public class EmployeeService {
 
     public static final int STATUS_CODE_200 = 200;
+    private static final String ADDRESS_APP = "address-app";
 
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -31,16 +36,20 @@ public class EmployeeService {
     @Autowired
     private AddressFeignClient addressFeignClient;
 
+    @Autowired
     private RestTemplate restTemplate;
 
-
     @Autowired
-    public EmployeeService( @Value("${addressService.baseUrl}") String addressServiceBaseUrl, RestTemplateBuilder restTemplateBuilder) {
-        System.out.println("addressServiceBaseUrl" +addressServiceBaseUrl);
-        this.restTemplate = restTemplateBuilder
-                .rootUri(addressServiceBaseUrl)
-                .build();
-    }
+    private DiscoveryClient discoveryClient;
+
+
+//    @Autowired
+//    public EmployeeService( @Value("${addressService.baseUrl}") String addressServiceBaseUrl, RestTemplateBuilder restTemplateBuilder) {
+//        System.out.println("addressServiceBaseUrl" +addressServiceBaseUrl);
+//        this.restTemplate = restTemplateBuilder
+//                .rootUri(addressServiceBaseUrl)
+//                .build();
+//    }
 
     public boolean createEmployee(EmployeeRequest employeeRequest) {
         Employee employee = Employee.builder()
@@ -58,10 +67,15 @@ public class EmployeeService {
         if (employeeObject.isPresent()) {
             Employee employee = employeeObject.get();
             EmployeeResponse employeeResponse = modelMapper.map(employee, EmployeeResponse.class);
-            ResponseEntity<AddressResponse> addressResponseEntity =  addressFeignClient.getAddressByEmployeeId(employeeId);
-            if (addressResponseEntity.getStatusCode() == HttpStatusCode.valueOf(STATUS_CODE_200)){
-                AddressResponse addressResponse = addressResponseEntity.getBody();
-                employeeResponse.setAddressResponse(addressResponse);
+//            ResponseEntity<AddressResponse> addressResponseEntity =  addressFeignClient.getAddressByEmployeeId(employeeId);
+//            if (addressResponseEntity.getStatusCode() == HttpStatusCode.valueOf(STATUS_CODE_200)){
+//                AddressResponse addressResponse = addressResponseEntity.getBody();
+//                employeeResponse.setAddressResponse(addressResponse);
+//            }
+//            return Optional.of(employeeResponse);
+            AddressResponse addressResponseEntity =  getAddressUsingRestTemplate(employeeId);
+            if(Objects.nonNull(addressResponseEntity)) {
+                employeeResponse.setAddressResponse(addressResponseEntity);
             }
             return Optional.of(employeeResponse);
         }
@@ -69,6 +83,10 @@ public class EmployeeService {
     }
 
     private AddressResponse getAddressUsingRestTemplate(String employeeId) {
-        return restTemplate.getForObject("/address/{id}", AddressResponse.class, employeeId);
+        List<ServiceInstance> serviceInstances = discoveryClient.getInstances(ADDRESS_APP);
+        ServiceInstance instance = serviceInstances.get(0);
+        String uriOfAddressService = instance.getUri().toString();
+        System.out.println("URO of Address Service >>>>>>>>>>>>>>>> "+uriOfAddressService);
+        return restTemplate.getForObject(uriOfAddressService+"/address-app/api/address/{employeeId}", AddressResponse.class, employeeId);
     }
 }
